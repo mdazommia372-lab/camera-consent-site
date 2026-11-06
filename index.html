@@ -1,0 +1,104 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Camera Consent</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #101827;
+  color: white;
+  text-align: center;
+  padding: 25px 15px;
+}
+.box {
+  max-width: 420px;
+  margin: 30px auto;
+  padding: 22px;
+  background: #1e293b;
+  border-radius: 15px;
+}
+button {
+  background: #16a34a;
+  color: white;
+  border: 0;
+  padding: 14px 22px;
+  border-radius: 9px;
+  font-size: 17px;
+  margin: 10px;
+}
+video, img {
+  width: 100%;
+  border-radius: 12px;
+  margin-top: 15px;
+}
+</style>
+</head>
+<body>
+<div class="box">
+<h2>ক্যামেরা ছবি</h2>
+<p>সম্মতি দিলে আপনার সামনের ক্যামেরা চালু হবে। ৩ সেকেন্ড কাউন্টডাউনের পর স্বয়ংক্রিয়ভাবে একটি ছবি তোলা হবে। ছবিটি এই পেজে দেখানো হবে।</p>
+
+<button id="start">আমি সম্মতি দিচ্ছি</button>
+<p id="status">আপনার অনুমতি ছাড়া ক্যামেরা চালু হবে না।</p>
+
+<video id="video" autoplay playsinline hidden></video>
+<canvas id="canvas" hidden></canvas>
+<img id="photo" hidden>
+
+<a id="download" hidden download="my-photo.jpg">
+<button>ছবি ডাউনলোড</button>
+</a>
+</div>
+
+<script>
+const start = document.getElementById("start");
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const photo = document.getElementById("photo");
+const status = document.getElementById("status");
+const download = document.getElementById("download");
+
+start.onclick = async () => {
+  start.disabled = true;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" },
+      audio: false
+    });
+
+    video.srcObject = stream;
+    video.hidden = false;
+    await video.play();
+
+    for (let i = 3; i > 0; i--) {
+      status.textContent = i + " সেকেন্ড পরে ছবি তোলা হবে";
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(
+      video, 0, 0, canvas.width, canvas.height
+    );
+
+    const image = canvas.toDataURL("image/jpeg", 0.9);
+    photo.src = image;
+    photo.hidden = false;
+    download.href = image;
+    download.hidden = false;
+    status.textContent = "ছবি তোলা হয়েছে!";
+
+    stream.getTracks().forEach(track => track.stop());
+    video.hidden = true;
+
+  } catch (error) {
+    status.textContent = "ক্যামেরা চালু হয়নি। অনুমতি ও HTTPS পরীক্ষা করুন।";
+    start.disabled = false;
+  }
+};
+</script>
+</body>
+</html>
